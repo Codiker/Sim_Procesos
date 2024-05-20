@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Simulador Web</title>
+    <link rel="shortcut icon" href="icono.ico" type="image/x-icon">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f1f1f1;
+        }
+
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .xml-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .xml-table th,
+        .xml-table td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        .xml-table th {
+            background-color: #f2f2f2;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .controls label {
+            margin-right: 10px;
+            font: 1.2em;
+        }
+
+        .controls input[type="number"] {
+            width: 80px;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        .botones {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .botones .boton {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: none;
+            color: #fff;
+            background-color: #007bff;
+            border: 2px solid #007bff;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .botones .boton:hover {
+            background-color: #0056b3;
+            color: #fff;
+        }
+
+        .botones .boton:active {
+            background-color: #004080;
+            color: #fff;
+        }
+
+
+        #card-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            /* Alinear las tarjetas horizontalmente */
+            margin-bottom: 20px;
+        }
+
+        .card {
+            width: calc(20% - 20px);
+            /* Ancho de las tarjetas, puedes ajustar este valor según tus necesidades */
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+            margin-right: 20px;
+            /* Espacio entre las tarjetas */
+        }
+
+        .card-body {
+            padding: 10px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .card-text {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            border: 1px solid black;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .report-table th,
+        .report-table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid black;
+        }
+
+        .report-table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('.xml-link').click(function (e) {
+                e.preventDefault();
+
+                var archivo = $(this).text();
+
+                $.ajax({
+                    url: '/' + archivo,
+                    method: 'GET',
+                    success: function (response) {
+                        // Procesar el contenido XML obtenido en la respuesta
+                        var contenidoXml = response.contenido_xml;
+                        console.log(contenidoXml);
+
+                        // Limpiar el contenedor antes de agregar las tarjetas
+                        $('#card-container').empty();
+
+                        // Obtener los elementos del XML
+                        var parser = new DOMParser();
+                        var xmlDoc = parser.parseFromString(contenidoXml, 'text/xml');
+                        var elementos = xmlDoc.getElementsByTagName('proceso');
+
+                        // Recorrer los elementos del XML y crear las tarjetas
+                        for (var i = 0; i < elementos.length; i++) {
+                            var elemento = elementos[i];
+
+                            // Obtener los valores de los elementos hijo del proceso
+                            var pid = getElementValue(elemento, 'pid');
+                            var nombre = getElementValue(elemento, 'nombre');
+                            var descripcion = getElementValue(elemento, 'descripcion');
+                            var usuario = getElementValue(elemento, 'usuario');
+                            var memoria = getElementValue(elemento, 'memoria');
+                            var cpuPercent = getElementValue(elemento, 'cpu');
+                            var prioridad = getElementValue(elemento, 'prioridad');
+
+                            // Crear una tarjeta con la información del elemento
+                            var cardHtml = '<div class="card">' +
+                                '<div class="card-body">' +
+                                '<h5 class="card-title">PID: ' + pid + '</h5>' +
+                                '<p class="card-text">Nombre: ' + nombre + '</p>' +
+                                '<p class="card-text">Descripción: ' + descripcion + '</p>' +
+                                '<p class="card-text">Usuario: ' + usuario + '</p>' +
+                                '<p class="card-text">Memoria: ' + memoria + '</p>' +
+                                '<p class="card-text">CPU Percent: ' + cpuPercent + '</p>' +
+                                '<p class="card-text">Prioridad: ' + prioridad + '</p>' +
+                                '</div>' +
+                                '</div>';
+
+                            // Agregar la tarjeta al contenedor
+                            $('#card-container').append(cardHtml);
+                        }
+
+                        // Mostrar el contenedor de tarjetas
+                        $('#card-container').show();
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            });
+
+            // Ocultar el contenedor de tarjetas al cargar la página
+            $('#card-container').hide();
+        });
+
+        function getElementValue(parentElement, tagName) {
+            var element = parentElement.querySelector(tagName);
+            return element ? element.textContent : '';
+        }
+
+    </script>
+</head>
+
+<body>
+    <div class="catalogo_xml">
+        <table>
+            <tr>
+                <th>Archivos XML</th>
+            </tr>
+            {% for archivo in archivos_xml %}
+            <tr>
+                <td><a class="xml-link" href="#">{{ archivo }}</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+
+   
+    <div class="controls">
+        <label for="">Quantum:</label>
+        <input type="number">
+        <div class="botones">
+            <button class="boton">Iniciar</button>
+            <Button class="boton">Pausar</Button>
+            <button class="boton">Reiniciar</button>
+        </div>
+
+        <form action="/simulator" method="GET">
+            <button type="submit">Conteo de Caractere!</button>
+        </form>
+
+        <form action="/remove" method="GET">
+            <button type="submit">Borrar</button>
+        </form>
+    </div>
+
+    <div id="card-container"></div>
+
+    <div class="reporte">
+        <table>
+            <tr>
+                <th>Nombre Proceso(P)</th>
+                <th>Tiempo de llegada(T.L)</th>
+                <th>Rafaga(R)</th>
+                <th>Prioridad(P.R)</th>
+                <th>Turnaround(TR)</th>
+                <th>Tiempo de finalización(T.F)</th>
+            </tr>
+            {% for valor in valores %}
+            <tr>
+                <td>{{ valor['P'] }}</td>
+                <td>{{ valor['TL'] }}</td>
+                <td>{{ valor['R'] }}</td>
+                <td>{{ valor['PR'] }}</td>
+                <td>{{ valor['TR'] }}</td>
+                <td>{{ valor['TF'] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+
+</html>
